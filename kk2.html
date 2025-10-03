@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>第三关：厨房整理（点击版升级）</title>
+<title>第三关：厨房整理（点击版直接跳转）</title>
 <style>
 :root {
   --bg:#f5f0e6;--card-face:#fff;--accent:#c9a86b;
@@ -27,11 +27,11 @@ button:hover{opacity:0.9;}
 </style>
 </head>
 <body>
-<header><h1>第三关：厨房整理（点击版升级）</h1></header>
+<header><h1>第三关：厨房整理（点击版直接跳转）</h1></header>
 
 <div class="container">
   <div class="board-wrap">
-    <p style="text-align:center;">点击餐具，将其依次放入水槽洗干净，再点击放入餐架。</p>
+    <p style="text-align:center;">点击餐具，将其依次放入水槽洗干净，再点击放入餐架！</p>
 
     <div class="category" id="dirtyArea">
       <div class="category-title">脏碗碟区</div>
@@ -125,13 +125,10 @@ function attachClick(){
   updateStatus();
 }
 
+// 检查是否完成，直接跳转
 function checkComplete(){
-  const placed = [...rack.querySelectorAll('.item')].map(i=>i.dataset.type);
-  const requiredOrder = [];
-  allTypes.forEach(type=>{
-    [...kitchenItems].filter(i=>i.dataset.type===type).forEach(()=>requiredOrder.push(type));
-  });
-  if(placed.length===totalToWash && placed.every((v,i)=>v===requiredOrder[i])){
+  const placed = [...rack.querySelectorAll('.item')];
+  if(placed.length === totalToWash){
     clearInterval(timerInterval);
     completeSound.play();
     setTimeout(()=>{ window.location.href='kk3.html'; },500);
