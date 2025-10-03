@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>第五关：调味料知识问答（搞笑版）</title>
+<style>
+body{font-family:system-ui;background:#f5f0e6;color:#3b3b3b;display:flex;flex-direction:column;align-items:center;padding:12px;}
+h1{text-align:center;margin-bottom:12px;}
+.container{background:#fff;padding:16px;border-radius:12px;max-width:480px;width:100%;box-shadow:0 4px 12px rgba(31,31,31,0.12);}
+button{display:block;width:100%;margin:8px 0;padding:12px;border:none;border-radius:10px;background:#c9a86b;color:#fff;font-weight:600;font-size:16px;cursor:pointer;}
+button:hover{opacity:0.9;}
+</style>
+</head>
+<body>
+<h1>第五关：调味料知识问答（搞笑版）</h1>
+<div class="container" id="quizContainer">
+  <p id="question">问题加载中...</p>
+  <div id="options"></div>
+  <p id="progress">题目 1 / 7</p>
+</div>
+
+<script>
+const quiz = [
+  {q:"哪种调味料通常用于增加菜肴咸味？", options:["盐🧂","糖🍬","醋🍶","酱油🍶"], answer:"盐🧂"},
+  {q:"哪种调味料可以使食物有辣味？", options:["胡椒🌶️","盐🧂","酱油🍶","糖🍬"], answer:"胡椒🌶️"},
+  {q:"酱油主要由哪种原料制成？", options:["黄豆","辣椒","盐","蜂蜜"], answer:"黄豆"},
+  {q:"哪种调味料常用于凉拌菜增香？", options:["香油🥄","糖🍬","盐🧂","醋🍶"], answer:"香油🥄"},
+  {q:"哪种调味料是酸味的主要来源？", options:["醋🍶","酱油🍶","盐🧂","橄榄油🫒"], answer:"醋🍶"},
+  // 搞笑大便题
+  {q:"如果吃了太多辣椒，你最可能会？", options:["变超人🦸","拉肚子💩","头发变辣椒🌶️","自动跳舞💃"], answer:"拉肚子💩"},
+  {q:"厨师最怕哪种情况？", options:["顾客夸菜好吃😋","锅里飞出大便💩","盐加多🧂","酱油洒地🍶"], answer:"锅里飞出大便💩"}
+];
+
+let current = 0;
+const questionEl = document.getElementById('question');
+const optionsEl = document.getElementById('options');
+const progressEl = document.getElementById('progress');
+
+function loadQuestion(){
+  const q = quiz[current];
+  questionEl.textContent = q.q;
+  optionsEl.innerHTML = '';
+  q.options.forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.textContent = opt;
+    btn.addEventListener('click', ()=>{
+      if(opt===q.answer){alert("✅ 正确！");}else{alert("❌ 错误，正确答案："+q.answer);}
+      current++;
+      if(current<quiz.length){
+        loadQuestion();
+        progressEl.textContent=`题目 ${current+1} / ${quiz.length}`;
+      } else {
+        alert("恭喜完成第五关！即将进入下一关");
+        window.location.href='kk4.html';
+      }
+    });
+    optionsEl.appendChild(btn);
+  });
+}
+loadQuestion();
+</script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>轻松小游戏 — 三关</title>
+<style>
+:root {
+  --bg:#f5f0e6;--card-face:#fff;--card-back:#e8dbc7;--accent:#c9a86b;
+  --text:#3b3b3b;--shadow:rgba(31,31,31,0.12);--card-size:80px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{min-height:100vh;display:flex;flex-direction:column;font-family:system-ui;background:var(--bg);color:var(--text);}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(255,255,255,0.7);box-shadow:0 2px 6px var(--shadow);position:sticky;top:0;z-index:10;}
+h1{font-size:18px;font-weight:700;}
+.meta{display:flex;gap:10px;font-size:14px;}
+.container{flex:1;display:flex;flex-direction:column;align-items:center;padding:12px;overflow-y:auto;}
+.board-wrap{background:rgba(255,255,255,0.55);padding:12px;border-radius:12px;box-shadow:0 6px 12px var(--shadow);margin-top:12px;width:100%;max-width:480px;}
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;justify-items:center;}
+.card{width:var(--card-size);height:var(--card-size);perspective:1000px;touch-action:manipulation;}
+.card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.42s cubic-bezier(.2,.9,.3,1);}
+.card.flipped .card-inner{transform:rotateY(180deg);}
+.card-face,.card-back{position:absolute;inset:0;border-radius:8px;display:flex;align-items:center;justify-content:center;backface-visibility:hidden;box-shadow:0 4px 12px var(--shadow);font-size:24px;}
+.card-back{background:var(--card-back);}
+.card-face{background:var(--card-face);transform:rotateY(180deg);}
+button{background:var(--accent);border:none;padding:12px 16px;border-radius:10px;color:white;font-weight:600;font-size:16px;cursor:pointer;margin:6px 4px;}
+button:hover{opacity:0.9;}
+button.secondary{background:transparent;color:var(--text);border:1px solid rgba(0,0,0,0.1);}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(245,240,230,0.95);backdrop-filter:blur(3px);z-index:20;}
+.panel{background:var(--card-face);padding:24px;border-radius:14px;box-shadow:0 16px 32px var(--shadow);max-width:90%;text-align:center;}
+.footer{padding:10px;font-size:13px;text-align:center;color:#6b5b3b;}
+.category-wrap{display:flex;justify-content:space-around;margin-top:12px;flex-wrap:wrap;}
+.category{background:var(--card-back);border-radius:12px;padding:12px;width:120px;min-height:120px;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:0 4px 10px var(--shadow);}
+.item{background:var(--card-face);padding:10px;margin:6px;border-radius:8px;cursor:grab;touch-action:manipulation;box-shadow:0 2px 6px var(--shadow);}
+@media(max-width:400px){:root{--card-size:60px;}.board{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+<header>
+  <h1>轻松小游戏 — 三关</h1>
+  <div class="meta">
+    <div id="moves">步数:0</div>
+    <div id="time">时间:00:00</div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- 第一关 -->
+  <div class="board-wrap" id="level1Wrap">
+    <h2 style="text-align:center;">第一关：翻牌游戏（8对）</h2>
+    <div class="board" id="board"></div>
+    <div style="text-align:center;margin-top:8px;">
+      <button id="startBtn">开始游戏</button>
+      <button id="restartBtn" class="secondary">重置</button>
+    </div>
+  </div>
+
+  <!-- 第二关 -->
+  <div class="board-wrap" id="level2Wrap" style="display:none;">
+    <h2 style="text-align:center;">第二关：物品归类（3类）</h2>
+    <div class="category-wrap">
+      <div class="category" data-name="水果">水果</div>
+      <div class="category" data-name="星星">星星</div>
+      <div class="category" data-name="音乐">音乐</div>
+    </div>
+    <div style="display:flex;justify-content:center;flex-wrap:wrap;margin-top:12px;">
+      <div class="item" draggable="true" data-type="水果">🍒</div>
+      <div class="item" draggable="true" data-type="水果">🍎</div>
+      <div class="item" draggable="true" data-type="星星">⭐</div>
+      <div class="item" draggable="true" data-type="星星">🌟</div>
+      <div class="item" draggable="true" data-type="音乐">🎵</div>
+      <div class="item" draggable="true" data-type="音乐">🎶</div>
+    </div>
+    <div style="text-align:center;margin-top:8px;">
+      <button id="toLevel3Btn" class="secondary" style="display:none;">下一关</button>
+    </div>
+  </div>
+
+  <div class="footer">提示：完成所有关卡即可结束游戏。</div>
+</div>
+
+<div class="overlay" id="startOverlay">
+  <div class="panel">
+    <h2>米色小游戏 — 第一关</h2>
+    <p>准备好了吗？点击「开始游戏」后，计时与步数将开启。</p>
+    <button id="overlayStart">开始游戏</button>
+  </div>
+</div>
+
+<script>
+// ---------- 第一关翻牌 ----------
+const boardEl = document.getElementById('board');
+const movesEl = document.getElementById('moves');
+const timeEl = document.getElementById('time');
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
+const overlay = document.getElementById('startOverlay');
+const overlayStart = document.getElementById('overlayStart');
+
+let symbols=['🍒','🌿','⭐','🎵','🌸','🍇','🍉','🎁'],deck=[],firstCard=null,secondCard=null;
+let lock=false,moves=0,matched=0,timerInterval=null,seconds=0,started=false;
+
+function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+function buildDeck(){deck=symbols.concat(symbols).map((s,i)=>({id:i,sym:s}));for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}}
+function renderBoard(){boardEl.innerHTML='';deck.forEach(card=>{const c=document.createElement('div');c.className='card';c.innerHTML=`<div class="card-inner"><div class="card-back"></div><div class="card-face">${card.sym}</div></div>`;c.addEventListener('click',()=>onCardClick(c,card));boardEl.appendChild(c);});}
+function startTimer(){if(timerInterval)clearInterval(timerInterval);seconds=0;timeEl.textContent='时间:00:00';timerInterval=setInterval(()=>{seconds++;timeEl.textContent='时间:'+formatTime(seconds)},1000);}
+function stopTimer(){if(timerInterval)clearInterval(timerInterval);}
+function onCardClick(el,card){
+  if(lock||el.classList.contains('flipped'))return;
+  if(!started){started=true;startTimer();}
+  el.classList.add('flipped');
+  if(!firstCard){firstCard={el,card};return;}
+  if(!secondCard){secondCard={el,card};}
+  moves++;movesEl.textContent='步数:'+moves;
+  lock=true;
+  if(firstCard.card.sym===secondCard.card.sym){
+    setTimeout(()=>{
+      firstCard.el.style.visibility='hidden';
+      secondCard.el.style.visibility='hidden';
+      matched+=2;
+      resetSelection();
+      if(matched===deck.length){stopTimer();setTimeout(showLevel2Panel,400);}
+    },420);
+  }else{setTimeout(()=>{firstCard.el.classList.remove('flipped');secondCard.el.classList.remove('flipped');resetSelection();},900);}
+}
+function resetSelection(){firstCard=null;secondCard=null;lock=false;}
+function showLevel2Panel(){
+  const panel=document.createElement('div');panel.className='overlay';
+  panel.innerHTML=`<div class="panel"><h2>恭喜完成第一关 🎉</h2><p>用时 ${formatTime(seconds)} 步数 ${moves}</p><button id="nextLevelBtn">下一关</button></div>`;
+  document.body.appendChild(panel);
+  document.getElementById('nextLevelBtn').addEventListener('click',()=>{
+    panel.remove();
+    document.getElementById('level1Wrap').style.display='none';
+    document.getElementById('level2Wrap').style.display='block';
+  });
+}
+function resetGame(){stopTimer();started=false;moves=0;matched=0;movesEl.textContent='步数:0';timeEl.textContent='时间:00:00';buildDeck();renderBoard();}
+
+startBtn.addEventListener('click',()=>{overlay.style.display='flex';overlayStart.focus();});
+overlayStart.addEventListener('click',()=>{overlay.style.display='none';resetGame();});
+restartBtn.addEventListener('click',()=>{resetGame();});
+
+buildDeck();renderBoard();
+
+// ---------- 第二关拖放逻辑 ----------
+const items = document.querySelectorAll('.item');
+const categories = document.querySelectorAll('.category');
+items.forEach(item=>{
+  item.addEventListener('dragstart', e=>{e.dataTransfer.setData('type', item.dataset.type);});
+});
+categories.forEach(cat=>{
+  cat.addEventListener('dragover', e=>e.preventDefault());
+  cat.addEventListener('drop', e=>{
+    e.preventDefault();
+    const type = e.dataTransfer.getData('type');
+    if(type===cat.dataset.name){
+      const dragged = [...items].find(i=>i.dataset.type===type && i.parentElement!==cat);
+      if(dragged){cat.appendChild(dragged);}
+      checkLevel2Complete();
+    }
+  });
+});
+const toLevel3Btn = document.getElementById('toLevel3Btn');
+function checkLevel2Complete(){
+  const allPlaced = [...items].every(item=>item.parentElement.dataset.name===item.dataset.type);
+  if(allPlaced){
+    toLevel3Btn.style.display='inline-block';
+  }
+}
+toLevel3Btn.addEventListener('click',()=>{
+  // 直接跳转到 kk2.html
+  window.location.href = 'kk2.html';
+});
+</script>
+</body>
+</html>
+
+

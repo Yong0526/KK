@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>酷跑收集食材（完整版）</title>
+<style>
+body{margin:0;padding:0;overflow:hidden;background:#cceeff;font-family:system-ui;}
+#gameCanvas{display:block;margin:0 auto;background:#cceeff;}
+#score{position:absolute;top:10px;left:10px;font-size:20px;font-weight:bold;color:#3b3b3b;}
+#timer{position:absolute;top:10px;right:10px;font-size:20px;font-weight:bold;color:#3b3b3b;}
+#restartBtn{
+  position:absolute;
+  bottom:20px;
+  right:20px;
+  padding:14px 20px;
+  font-size:18px;
+  background:#c9a86b;
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,0.3);
+  z-index:1000;
+  touch-action: manipulation;
+}
+#restartBtn:active{
+  transform: scale(0.95);
+  opacity:0.9;
+}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="480" height="320"></canvas>
+<div id="score">分数: 0</div>
+<div id="timer">时间: 60s</div>
+<button id="restartBtn">重新开始</button>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const timerEl = document.getElementById('timer');
+const restartBtn = document.getElementById('restartBtn');
+
+let player, obstacles, foods, score, gameOver, bgX, timeLeft, timerInterval, clouds;
+
+// --- 初始化游戏 ---
+function initGame(){
+  player = {x:50,y:250,width:40,height:40,vy:0,jumping:false};
+  obstacles = [];
+  foods = [];
+  score = 0;
+  gameOver = false;
+  bgX = 0;
+  timeLeft = 60;
+  scoreEl.textContent = '分数: 0';
+  timerEl.textContent = '时间: 60s';
+
+  // 云朵
+  clouds = [];
+  for(let i=0;i<5;i++){
+    clouds.push({x:Math.random()*canvas.width, y:50+Math.random()*50, w:60, h:30, speed:0.5+Math.random()*0.5});
+  }
+
+  if(timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    if(gameOver) return;
+    timeLeft--;
+    timerEl.textContent=`时间: ${timeLeft}s`;
+    if(timeLeft<=0){
+      clearInterval(timerInterval);
+      alert(`⏰ 时间到！总分: ${score}`);
+      window.location.href='kk8.html';
+    }
+  },1000);
+}
+
+// --- 控制跳跃 ---
+document.addEventListener('keydown', e=>{ if(e.code==='Space') jump(); });
+document.addEventListener('touchstart', jump);
+function jump(){ if(!player.jumping){player.vy=-12;player.jumping=true;} }
+
+// --- 随机生成食材和障碍物 ---
+function spawn(){
+  if(Math.random()<0.03) foods.push({x:480,y:250,emoji:['🥦','🥕','🍖','🧄','🧂'][Math.floor(Math.random()*5)],width:30,height:30});
+  if(Math.random()<0.008) obstacles.push({x:480,y:270,width:30,height:30});
+}
+
+// --- 游戏主循环 ---
+function update(){
+  if(gameOver) return;
+
+  // 背景滚动
+  bgX-=1.5;
+  if(bgX<=-canvas.width) bgX=0;
+
+  // 清屏
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // 绘制天空
+  ctx.fillStyle='#87CEEB';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // 绘制云朵
+  ctx.fillStyle='white';
+  clouds.forEach(c=>{
+    c.x -= c.speed;
+    if(c.x + c.w<0) c.x = canvas.width;
+    ctx.beginPath();
+    ctx.ellipse(c.x,c.y,c.w,c.h,0,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // 绘制地面
+  ctx.fillStyle='#c2b280';
+  ctx.fillRect(0,290,canvas.width,30);
+
+  // 背景山丘滚动
+  ctx.fillStyle='#90ee90';
+  ctx.fillRect(bgX,240,canvas.width,50);
+  ctx.fillRect(bgX+canvas.width,240,canvas.width,50);
+
+  // 玩家物理
+  player.vy += 0.8;
+  player.y += player.vy;
+  if(player.y>=250){player.y=250;player.vy=0;player.jumping=false;}
+  ctx.fillStyle='blue';
+  ctx.fillRect(player.x,player.y,player.width,player.height);
+
+  // 食材
+  for(let i=foods.length-1;i>=0;i--){
+    foods[i].x-=4;
+    ctx.font='28px Arial';
+    ctx.fillText(foods[i].emoji, foods[i].x, foods[i].y+20);
+    if(foods[i].x+foods[i].width<0) foods.splice(i,1);
+    else if(player.x<foods[i].x+foods[i].width && player.x+player.width>foods[i].x &&
+            player.y<foods[i].y+foods[i].height && player.y+player.height>foods[i].y){
+      score++;
+      foods.splice(i,1);
+      scoreEl.textContent='分数: '+score;
+      // 收集特效
+      ctx.fillStyle='yellow';
+      ctx.beginPath();
+      ctx.arc(player.x+20,player.y+20,10,0,Math.PI*2);
+      ctx.fill();
+      // 可替换为本地或在线音效
+      // new Audio('collect.mp3').play();
+    }
+  }
+
+  // 障碍物
+  ctx.fillStyle='brown';
+  for(let i=obstacles.length-1;i>=0;i--){
+    obstacles[i].x-=4;
+    ctx.fillRect(obstacles[i].x,obstacles[i].y,obstacles[i].width,obstacles[i].height);
+    if(obstacles[i].x+obstacles[i].width<0) obstacles.splice(i,1);
+    else if(player.x<obstacles[i].x+obstacles[i].width && player.x+player.width>obstacles[i].x &&
+            player.y<obstacles[i].y+obstacles[i].height && player.y+player.height>obstacles[i].y){
+      gameOver=true;
+      alert('💥 撞到障碍物！游戏结束\n总分: '+score);
+      window.location.href='kk8.html';
+    }
+  }
+
+  spawn();
+  requestAnimationFrame(update);
+}
+
+// --- 重新开始按钮 ---
+restartBtn.addEventListener('click',()=>{
+  initGame();
+});
+
+// --- 开始游戏 ---
+initGame();
+update();
+</script>
+</body>
+</html>
+
+
+
