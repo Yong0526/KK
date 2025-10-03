@@ -31,8 +31,8 @@ button.secondary{background:transparent;color:var(--text);border:1px solid rgba(
 .footer{padding:10px;font-size:13px;text-align:center;color:#6b5b3b;}
 .category-wrap{display:flex;justify-content:space-around;margin-top:12px;flex-wrap:wrap;}
 .category{background:var(--card-back);border-radius:12px;padding:12px;width:120px;min-height:120px;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:0 4px 10px var(--shadow);}
-.item{background:var(--card-face);padding:10px;margin:6px;border-radius:8px;cursor:grab;touch-action:manipulation;box-shadow:0 2px 6px var(--shadow);}
-@media(max-width:400px){:root{--card-size:60px;}.board{grid-template-columns:repeat(3,1fr);}}
+.item{background:var(--card-face);padding:10px;margin:6px;border-radius:8px;cursor:pointer;touch-action: manipulation;box-shadow:0 2px 6px var(--shadow);}
+@media(max-width:400px){:root{--card-size:60px;}.board{grid-template-columns:repeat(3,1fr);} .category{width:100px;min-height:100px;} }
 </style>
 </head>
 <body>
@@ -64,12 +64,12 @@ button.secondary{background:transparent;color:var(--text);border:1px solid rgba(
       <div class="category" data-name="音乐">音乐</div>
     </div>
     <div style="display:flex;justify-content:center;flex-wrap:wrap;margin-top:12px;">
-      <div class="item" draggable="true" data-type="水果">🍒</div>
-      <div class="item" draggable="true" data-type="水果">🍎</div>
-      <div class="item" draggable="true" data-type="星星">⭐</div>
-      <div class="item" draggable="true" data-type="星星">🌟</div>
-      <div class="item" draggable="true" data-type="音乐">🎵</div>
-      <div class="item" draggable="true" data-type="音乐">🎶</div>
+      <div class="item" data-type="水果">🍒</div>
+      <div class="item" data-type="水果">🍎</div>
+      <div class="item" data-type="星星">⭐</div>
+      <div class="item" data-type="星星">🌟</div>
+      <div class="item" data-type="音乐">🎵</div>
+      <div class="item" data-type="音乐">🎶</div>
     </div>
     <div style="text-align:center;margin-top:8px;">
       <button id="toLevel3Btn" class="secondary" style="display:none;">下一关</button>
@@ -101,8 +101,8 @@ let symbols=['🍒','🌿','⭐','🎵','🌸','🍇','🍉','🎁'],deck=[],fir
 let lock=false,moves=0,matched=0,timerInterval=null,seconds=0,started=false;
 
 function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
-function buildDeck(){deck=symbols.concat(symbols).map((s,i)=>({id:i,sym:s}));for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}}
-function renderBoard(){boardEl.innerHTML='';deck.forEach(card=>{const c=document.createElement('div');c.className='card';c.innerHTML=`<div class="card-inner"><div class="card-back"></div><div class="card-face">${card.sym}</div></div>`;c.addEventListener('click',()=>onCardClick(c,card));boardEl.appendChild(c);});}
+function buildDeck(){deck=symbols.concat(symbols).map((s,i)=>({id:i,sym:s}));for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];} }
+function renderBoard(){boardEl.innerHTML='';deck.forEach(card=>{const c=document.createElement('div');c.className='card';c.innerHTML=`<div class="card-inner"><div class="card-back"></div><div class="card-face">${card.sym}</div></div>`;c.addEventListener('click',()=>onCardClick(c,card));boardEl.appendChild(c);}); }
 function startTimer(){if(timerInterval)clearInterval(timerInterval);seconds=0;timeEl.textContent='时间:00:00';timerInterval=setInterval(()=>{seconds++;timeEl.textContent='时间:'+formatTime(seconds)},1000);}
 function stopTimer(){if(timerInterval)clearInterval(timerInterval);}
 function onCardClick(el,card){
@@ -114,13 +114,7 @@ function onCardClick(el,card){
   moves++;movesEl.textContent='步数:'+moves;
   lock=true;
   if(firstCard.card.sym===secondCard.card.sym){
-    setTimeout(()=>{
-      firstCard.el.style.visibility='hidden';
-      secondCard.el.style.visibility='hidden';
-      matched+=2;
-      resetSelection();
-      if(matched===deck.length){stopTimer();setTimeout(showLevel2Panel,400);}
-    },420);
+    setTimeout(()=>{firstCard.el.style.visibility='hidden';secondCard.el.style.visibility='hidden';matched+=2;resetSelection();if(matched===deck.length){stopTimer();setTimeout(showLevel2Panel,400);}},420);
   }else{setTimeout(()=>{firstCard.el.classList.remove('flipped');secondCard.el.classList.remove('flipped');resetSelection();},900);}
 }
 function resetSelection(){firstCard=null;secondCard=null;lock=false;}
@@ -128,11 +122,7 @@ function showLevel2Panel(){
   const panel=document.createElement('div');panel.className='overlay';
   panel.innerHTML=`<div class="panel"><h2>恭喜完成第一关 🎉</h2><p>用时 ${formatTime(seconds)} 步数 ${moves}</p><button id="nextLevelBtn">下一关</button></div>`;
   document.body.appendChild(panel);
-  document.getElementById('nextLevelBtn').addEventListener('click',()=>{
-    panel.remove();
-    document.getElementById('level1Wrap').style.display='none';
-    document.getElementById('level2Wrap').style.display='block';
-  });
+  document.getElementById('nextLevelBtn').addEventListener('click',()=>{panel.remove();document.getElementById('level1Wrap').style.display='none';document.getElementById('level2Wrap').style.display='block';});
 }
 function resetGame(){stopTimer();started=false;moves=0;matched=0;movesEl.textContent='步数:0';timeEl.textContent='时间:00:00';buildDeck();renderBoard();}
 
@@ -142,33 +132,69 @@ restartBtn.addEventListener('click',()=>{resetGame();});
 
 buildDeck();renderBoard();
 
-// ---------- 第二关拖放逻辑 ----------
+// ---------- 第二关触屏拖放 ----------
 const items = document.querySelectorAll('.item');
 const categories = document.querySelectorAll('.category');
+
 items.forEach(item=>{
-  item.addEventListener('dragstart', e=>{e.dataTransfer.setData('type', item.dataset.type);});
-});
-categories.forEach(cat=>{
-  cat.addEventListener('dragover', e=>e.preventDefault());
-  cat.addEventListener('drop', e=>{
+  let offsetX, offsetY;
+  let originalParent = item.parentElement;
+
+  item.addEventListener('touchstart', e=>{
     e.preventDefault();
-    const type = e.dataTransfer.getData('type');
-    if(type===cat.dataset.name){
-      const dragged = [...items].find(i=>i.dataset.type===type && i.parentElement!==cat);
-      if(dragged){cat.appendChild(dragged);}
-      checkLevel2Complete();
+    const touch = e.touches[0];
+    offsetX = touch.clientX - item.getBoundingClientRect().left;
+    offsetY = touch.clientY - item.getBoundingClientRect().top;
+    item.style.position = 'absolute';
+    item.style.zIndex = 1000;
+    document.body.appendChild(item);
+  });
+
+  item.addEventListener('touchmove', e=>{
+    e.preventDefault();
+    const touch = e.touches[0];
+    item.style.left = (touch.clientX - offsetX) + 'px';
+    item.style.top = (touch.clientY - offsetY) + 'px';
+  });
+
+  item.addEventListener('touchend', e=>{
+    let placed = false;
+    categories.forEach(cat=>{
+      const catRect = cat.getBoundingClientRect();
+      const itemRect = item.getBoundingClientRect();
+      if(itemRect.left + itemRect.width/2 > catRect.left &&
+         itemRect.right - itemRect.width/2 < catRect.right &&
+         itemRect.top + itemRect.height/2 > catRect.top &&
+         itemRect.bottom - itemRect.height/2 < catRect.bottom &&
+         item.dataset.type === cat.dataset.name){
+           cat.appendChild(item);
+           item.style.position = '';
+           item.style.left = '';
+           item.style.top = '';
+           item.style.zIndex = '';
+           placed = true;
+           checkLevel2Complete();
+      }
+    });
+    if(!placed){
+      originalParent.appendChild(item);
+      item.style.position = '';
+      item.style.left = '';
+      item.style.top = '';
+      item.style.zIndex = '';
     }
   });
 });
-const toLevel3Btn = document.getElementById('toLevel3Btn');
+
 function checkLevel2Complete(){
   const allPlaced = [...items].every(item=>item.parentElement.dataset.name===item.dataset.type);
   if(allPlaced){
-    toLevel3Btn.style.display='inline-block';
+    document.getElementById('toLevel3Btn').style.display='inline-block';
   }
 }
-toLevel3Btn.addEventListener('click',()=>{
-  // 直接跳转到 kk2.html
+
+document.getElementById('toLevel3Btn').addEventListener('click',()=>{
+  // 完成第二关，跳转下一关
   window.location.href = 'kk2.html';
 });
 </script>
